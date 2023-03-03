@@ -10,6 +10,8 @@ pub const RACKET_HEIGHT: f32 = 25.0;
 pub const RACKET_WIDTH: f32 = 100.0;
 pub const RACKET_EDGE_OFFSET: f32 = 50.0;
 
+pub const RACKET_SPEED: f32 = 10.0;
+
 #[derive(Reflect, Component, Default)]
 #[reflect(Component)]
 pub struct Racket;
@@ -35,11 +37,12 @@ fn main() {
                 ..default()
             }
         ))
-        .add_plugin(WorldInspectorPlugin)
+        // .add_plugin(WorldInspectorPlugin)
         .register_type::<Racket>()
         .register_type::<Player>()
         .add_startup_system(spawn_camera)
         .add_startup_system(spawn_rackets)
+        .add_system(control_rackets)
         .run();
 }
 
@@ -56,7 +59,7 @@ fn spawn_rackets(
             custom_size: Some(Vec2::new(RACKET_HEIGHT, RACKET_WIDTH)),
             ..default()
         },
-        transform: Transform::from_xyz(-WINDOW_WIDTH/2.0+RACKET_EDGE_OFFSET, 0.0, 0.0),
+        transform: Transform::from_xyz(-0.5*WINDOW_WIDTH+RACKET_EDGE_OFFSET, 0.0, 0.0),
         ..default()
     })
     .insert(Name::new("Player 1 Racket"))
@@ -69,7 +72,7 @@ commands.spawn(SpriteBundle {
             custom_size: Some(Vec2::new(RACKET_HEIGHT, RACKET_WIDTH)),
             ..default()
         },
-        transform: Transform::from_xyz(WINDOW_WIDTH/2.0-RACKET_EDGE_OFFSET, 0.0, 0.0),
+        transform: Transform::from_xyz(0.5*WINDOW_WIDTH-RACKET_EDGE_OFFSET, 0.0, 0.0),
         ..default()
     })
     .insert(Name::new("Player 2 Racket"))
@@ -77,3 +80,39 @@ commands.spawn(SpriteBundle {
     .insert(Player {player_number: 2});
 }
 
+fn control_rackets(
+    mut rackets: Query<(&Player, &mut Transform)>,
+    keyboard: Res<Input<KeyCode>>,
+) {
+    if keyboard.pressed(KeyCode::W) {
+        for (player, mut transform) in rackets.iter_mut() {
+            if player.player_number == 1 && transform.translation.y < 0.5*WINDOW_HEIGHT-RACKET_HEIGHT {
+                transform.translation.y += RACKET_SPEED;
+            }
+        }
+    }
+    
+    if keyboard.pressed(KeyCode::S) {
+        for (player, mut transform) in rackets.iter_mut() {
+            if player.player_number == 1 && transform.translation.y > -0.5*WINDOW_HEIGHT+RACKET_HEIGHT {
+                transform.translation.y -= RACKET_SPEED;
+            }
+        }
+    }
+    
+    if keyboard.pressed(KeyCode::Up) {
+        for (player, mut transform) in rackets.iter_mut() {
+            if player.player_number == 2 && transform.translation.y < 0.5*WINDOW_HEIGHT-RACKET_HEIGHT {
+                transform.translation.y += RACKET_SPEED;
+            }
+        }
+    }
+    
+    if keyboard.pressed(KeyCode::Down) {
+        for (player, mut transform) in rackets.iter_mut() {
+            if player.player_number == 2 && transform.translation.y > -0.5*WINDOW_HEIGHT+RACKET_HEIGHT {
+                transform.translation.y -= RACKET_SPEED;
+            }
+        }
+    }
+}
