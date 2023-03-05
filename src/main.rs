@@ -55,11 +55,12 @@ fn main() {
         .add_system(control_rackets)
         .add_system(bounce_balls)
         .add_system(move_balls)
+        .add_system(score_goal)
         .run();
 }
 
 fn spawn_camera(
-    mut commands: Commands
+    mut commands: Commands,
 ) {
     commands.spawn(Camera2dBundle::default()).insert(Name::new("Camera"));
 }
@@ -190,3 +191,28 @@ fn move_balls(
     }
 }
 
+
+
+fn score_goal(
+    mut balls: Query<(&mut Ball, &mut Transform)>
+) {
+    for (mut ball, mut ball_transform) in balls.iter_mut() {
+        if ball_transform.translation.x <= -0.5*WINDOW_WIDTH {
+            // Return to center, player 2 serve
+            ball.direction = 0.5*std::f32::consts::PI;
+            ball_transform.translation.x = 0.0;
+            ball_transform.translation.y = 0.0;
+
+            //TODO: Add scoring logic
+        }
+        
+        if ball_transform.translation.x >= 0.5*WINDOW_WIDTH {
+            // Return to center, player 1 serve
+            ball.direction = -0.5*std::f32::consts::PI;
+            ball_transform.translation.x = 0.0;
+            ball_transform.translation.y = 0.0;
+
+            //TODO: Add scoring logic
+        }
+    }
+}
