@@ -21,7 +21,8 @@ pub struct Racket;
 #[derive(Reflect, Component, Default)]
 #[reflect(Component)]
 pub struct Ball {
-    direction: f32
+    direction: f32,
+    moving: bool,
 }
 
 #[derive(Reflect, Component, Default)]
@@ -53,8 +54,9 @@ fn main() {
         .add_startup_system(spawn_rackets)
         .add_startup_system(spawn_ball)
         .add_system(control_rackets)
-        .add_system(bounce_balls)
-        .add_system(move_balls)
+        .add_system(serve_ball)
+        .add_system(bounce_ball)
+        .add_system(move_ball)
         .add_system(score_goal)
         .run();
 }
@@ -64,6 +66,8 @@ fn spawn_camera(
 ) {
     commands.spawn(Camera2dBundle::default()).insert(Name::new("Camera"));
 }
+
+
 
 fn spawn_rackets(
     mut commands: Commands,
@@ -146,10 +150,24 @@ fn spawn_ball(
         ..default()
     })
     .insert(Name::new("Ball"))
-    .insert(Ball {direction: 0.5*std::f32::consts::PI});
+    .insert(Ball {
+        direction: 0.5*std::f32::consts::PI,
+        moving: false,
+    });
 }
 
-fn bounce_balls(
+fn serve_ball(
+    mut balls: Query<&mut Ball>,
+    keyboard: Res<Input<KeyCode>>,
+) {
+    if keyboard.just_pressed(KeyCode::Space) {
+        for mut ball in balls.iter_mut(){
+            ball.moving = true;
+        }
+    }
+}
+
+fn bounce_ball(
     mut balls: Query<(&mut Ball, &Transform)>,
     rackets: Query<(&Player, &Transform)>
 ) {
@@ -182,16 +200,16 @@ fn bounce_balls(
     }
 }
 
-fn move_balls(
+fn move_ball(
     mut balls: Query<(&Ball, &mut Transform)>
 ) {
     for (ball, mut ball_transform) in balls.iter_mut() {
-        ball_transform.translation.x += (ball.direction.sin())*BALL_SPEED;
-        ball_transform.translation.y += (ball.direction.cos())*BALL_SPEED;
+        if ball.moving {
+            ball_transform.translation.x += (ball.direction.sin())*BALL_SPEED;
+            ball_transform.translation.y += (ball.direction.cos())*BALL_SPEED;
+        }
     }
 }
-
-
 
 fn score_goal(
     mut balls: Query<(&mut Ball, &mut Transform)>
@@ -200,6 +218,7 @@ fn score_goal(
         if ball_transform.translation.x <= -0.5*WINDOW_WIDTH {
             // Return to center, player 2 serve
             ball.direction = 0.5*std::f32::consts::PI;
+            ball.moving = false;
             ball_transform.translation.x = 0.0;
             ball_transform.translation.y = 0.0;
 
@@ -209,6 +228,7 @@ fn score_goal(
         if ball_transform.translation.x >= 0.5*WINDOW_WIDTH {
             // Return to center, player 1 serve
             ball.direction = -0.5*std::f32::consts::PI;
+            ball.moving = false;
             ball_transform.translation.x = 0.0;
             ball_transform.translation.y = 0.0;
 
