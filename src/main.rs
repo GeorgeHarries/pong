@@ -14,6 +14,8 @@ pub const RACKET_SPEED: f32 = 10.0;
 pub const BALL_SIZE: f32 = 5.0;
 pub const BALL_SPEED: f32 = 10.0;
 
+pub const SCATTER_FACTOR: f32 = 0.3;
+
 #[derive(Reflect, Component, Default)]
 #[reflect(Component)]
 pub struct Racket;
@@ -105,7 +107,7 @@ fn control_rackets(
 ) {
     if keyboard.pressed(KeyCode::W) {
         for (player, mut transform) in rackets.iter_mut() {
-            if player.player_number == 1 && transform.translation.y < 0.5*WINDOW_HEIGHT-RACKET_HEIGHT {
+            if player.player_number == 1 && transform.translation.y < 0.5*WINDOW_HEIGHT-0.5*RACKET_HEIGHT {
                 transform.translation.y += RACKET_SPEED;
             }
         }
@@ -113,7 +115,7 @@ fn control_rackets(
     
     if keyboard.pressed(KeyCode::S) {
         for (player, mut transform) in rackets.iter_mut() {
-            if player.player_number == 1 && transform.translation.y > -0.5*WINDOW_HEIGHT+RACKET_HEIGHT {
+            if player.player_number == 1 && transform.translation.y > -0.5*WINDOW_HEIGHT+0.5*RACKET_HEIGHT {
                 transform.translation.y -= RACKET_SPEED;
             }
         }
@@ -121,7 +123,7 @@ fn control_rackets(
     
     if keyboard.pressed(KeyCode::Up) {
         for (player, mut transform) in rackets.iter_mut() {
-            if player.player_number == 2 && transform.translation.y < 0.5*WINDOW_HEIGHT-RACKET_HEIGHT {
+            if player.player_number == 2 && transform.translation.y < 0.5*WINDOW_HEIGHT-0.5*RACKET_HEIGHT {
                 transform.translation.y += RACKET_SPEED;
             }
         }
@@ -129,7 +131,7 @@ fn control_rackets(
     
     if keyboard.pressed(KeyCode::Down) {
         for (player, mut transform) in rackets.iter_mut() {
-            if player.player_number == 2 && transform.translation.y > -0.5*WINDOW_HEIGHT+RACKET_HEIGHT {
+            if player.player_number == 2 && transform.translation.y > -0.5*WINDOW_HEIGHT+0.5*RACKET_HEIGHT {
                 transform.translation.y -= RACKET_SPEED;
             }
         }
@@ -185,7 +187,8 @@ fn bounce_ball(
                && ball_transform.translation.y > racket_transform.translation.y - 0.5*RACKET_HEIGHT
                && ball_transform.translation.y < racket_transform.translation.y + 0.5*RACKET_HEIGHT
             {
-                ball.direction = 2.0*std::f32::consts::PI - ball.direction;
+                let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * std::f32::consts::PI;
+                ball.direction = 2.0*std::f32::consts::PI - ball.direction + scatter;
             }
             if player.player_number == 2
                && ball_transform.translation.x >= racket_transform.translation.x - 0.5*RACKET_WIDTH
@@ -193,7 +196,8 @@ fn bounce_ball(
                && ball_transform.translation.y > racket_transform.translation.y - 0.5*RACKET_HEIGHT
                && ball_transform.translation.y < racket_transform.translation.y + 0.5*RACKET_HEIGHT
             {
-                ball.direction = 2.0*std::f32::consts::PI - ball.direction;
+                let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * std::f32::consts::PI;
+                ball.direction = 2.0*std::f32::consts::PI - ball.direction + scatter;
             }
         }
 
