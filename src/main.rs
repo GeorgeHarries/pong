@@ -7,7 +7,7 @@ pub const WINDOW_HEIGHT: f32 =  720.0;
 pub const WINDOW_WIDTH: f32 = WINDOW_HEIGHT*ASPECT_RATIO;
 
 pub const RACKET_HEIGHT: f32 = 100.0;
-pub const RACKET_WIDTH: f32 = 25.0;
+pub const RACKET_WIDTH: f32 = 10.0;
 pub const RACKET_EDGE_OFFSET: f32 = 50.0;
 pub const RACKET_SPEED: f32 = 10.0;
 
@@ -53,15 +53,16 @@ fn main() {
         .add_startup_system(spawn_rackets)
         .add_startup_system(spawn_ball)
         .add_system(control_rackets)
+        .add_system(bounce_balls)
         .add_system(move_balls)
         .run();
 }
 
-fn spawn_camera(mut commands: Commands) {
+fn spawn_camera(
+    mut commands: Commands
+) {
     commands.spawn(Camera2dBundle::default()).insert(Name::new("Camera"));
 }
-
-
 
 fn spawn_rackets(
     mut commands: Commands,
@@ -144,25 +145,48 @@ fn spawn_ball(
         ..default()
     })
     .insert(Name::new("Ball"))
-    .insert(Ball {direction: 0.123*std::f32::consts::PI});
+    .insert(Ball {direction: 0.5*std::f32::consts::PI});
+}
+
+fn bounce_balls(
+    mut balls: Query<(&mut Ball, &Transform)>,
+    rackets: Query<(&Player, &Transform)>
+) {
+    for (mut ball, ball_transform) in balls.iter_mut() {
+        // Wall reflect
+        if ball_transform.translation.y.abs() >= 0.5*WINDOW_HEIGHT {
+            ball.direction = std::f32::consts::PI - ball.direction;
+        }
+        
+        // Racket reflect TODO: check y pos
+        for (player, racket_transform) in rackets.iter() {
+            if player.player_number == 1
+               && ball_transform.translation.x <= racket_transform.translation.x + 0.5*RACKET_WIDTH
+               && ball_transform.translation.x >= racket_transform.translation.x
+               && ball_transform.translation.y > racket_transform.translation.y - 0.5*RACKET_HEIGHT
+               && ball_transform.translation.y < racket_transform.translation.y + 0.5*RACKET_HEIGHT
+            {
+                ball.direction = 2.0*std::f32::consts::PI - ball.direction;
+            }
+            if player.player_number == 2
+               && ball_transform.translation.x >= racket_transform.translation.x - 0.5*RACKET_WIDTH
+               && ball_transform.translation.x >= racket_transform.translation.x
+               && ball_transform.translation.y > racket_transform.translation.y - 0.5*RACKET_HEIGHT
+               && ball_transform.translation.y < racket_transform.translation.y + 0.5*RACKET_HEIGHT
+            {
+                ball.direction = 2.0*std::f32::consts::PI - ball.direction;
+            }
+        }
+
+    }
 }
 
 fn move_balls(
-    mut balls: Query<(&mut Ball, &mut Transform)>
+    mut balls: Query<(&Ball, &mut Transform)>
 ) {
-    for (mut ball, mut transform) in balls.iter_mut() {
-        // Wall reflect
-        if transform.translation.y.abs() >= 0.5*WINDOW_HEIGHT {
-            ball.direction = std::f32::consts::PI - ball.direction
-        }
-        
-        // Bounce at racket x pos TODO: Check racket y pos 
-        if transform.translation.x.abs() >= 0.5*WINDOW_WIDTH - RACKET_EDGE_OFFSET - 0.5*RACKET_WIDTH {
-            ball.direction = 2.0*std::f32::consts::PI - ball.direction;
-        }
-
-        // Move forward
-        transform.translation.x += (ball.direction.sin())*BALL_SPEED;
-        transform.translation.y += (ball.direction.cos())*BALL_SPEED;
+    for (ball, mut ball_transform) in balls.iter_mut() {
+        ball_transform.translation.x += (ball.direction.sin())*BALL_SPEED;
+        ball_transform.translation.y += (ball.direction.cos())*BALL_SPEED;
     }
 }
+
