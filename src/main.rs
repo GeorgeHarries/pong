@@ -179,22 +179,22 @@ fn bounce_ball(
             ball.direction = std::f32::consts::PI - ball.direction;
         }
         
-        // Racket reflect TODO: check y pos
+        // Racket reflect
         for (player, racket_transform) in rackets.iter() {
             if player.player_number == 1
-               && ball_transform.translation.x <= racket_transform.translation.x + 0.5*RACKET_WIDTH
+               && ball_transform.translation.x <= racket_transform.translation.x + BALL_SPEED
                && ball_transform.translation.x >= racket_transform.translation.x
-               && ball_transform.translation.y > racket_transform.translation.y - 0.5*RACKET_HEIGHT
-               && ball_transform.translation.y < racket_transform.translation.y + 0.5*RACKET_HEIGHT
+               && ball_transform.translation.y >= racket_transform.translation.y - 0.5*RACKET_HEIGHT - 0.5*BALL_SIZE
+               && ball_transform.translation.y <= racket_transform.translation.y + 0.5*RACKET_HEIGHT + 0.5*BALL_SIZE
             {
                 let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * std::f32::consts::PI;
                 ball.direction = 2.0*std::f32::consts::PI - ball.direction + scatter;
             }
             if player.player_number == 2
-               && ball_transform.translation.x >= racket_transform.translation.x - 0.5*RACKET_WIDTH
-               && ball_transform.translation.x >= racket_transform.translation.x
-               && ball_transform.translation.y > racket_transform.translation.y - 0.5*RACKET_HEIGHT
-               && ball_transform.translation.y < racket_transform.translation.y + 0.5*RACKET_HEIGHT
+               && ball_transform.translation.x >= racket_transform.translation.x - BALL_SPEED
+               && ball_transform.translation.x <= racket_transform.translation.x
+               && ball_transform.translation.y >= racket_transform.translation.y - 0.5*RACKET_HEIGHT - 0.5*BALL_SIZE
+               && ball_transform.translation.y <= racket_transform.translation.y + 0.5*RACKET_HEIGHT + 0.5*BALL_SIZE
             {
                 let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * std::f32::consts::PI;
                 ball.direction = 2.0*std::f32::consts::PI - ball.direction + scatter;
