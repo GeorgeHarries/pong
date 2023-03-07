@@ -1,18 +1,18 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
-
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use std::f32::consts::PI;
 
 pub const ASPECT_RATIO: f32 = 16.0/9.0;
 pub const WINDOW_HEIGHT: f32 =  720.0;
 pub const WINDOW_WIDTH: f32 = WINDOW_HEIGHT*ASPECT_RATIO;
 
 pub const RACKET_HEIGHT: f32 = 100.0;
-pub const RACKET_WIDTH: f32 = 10.0;
+pub const RACKET_WIDTH: f32 = 20.0;
 pub const RACKET_EDGE_OFFSET: f32 = 50.0;
-pub const RACKET_SPEED: f32 = 10.0;
+pub const RACKET_SPEED: f32 = 400.0;
 
 pub const BALL_SIZE: f32 = 5.0;
-pub const BALL_SPEED: f32 = 10.0;
+pub const BALL_SPEED: f32 = 500.0;
 
 pub const SCATTER_FACTOR: f32 = 0.3;
 
@@ -30,7 +30,7 @@ pub struct Ball {
 #[derive(Reflect, Component, Default)]
 #[reflect(Component)]
 pub struct Player {
-    player_number: u8
+    player_number: u8,
 }
 
 fn main() {
@@ -55,9 +55,9 @@ fn main() {
         .add_startup_system(spawn_camera)
         .add_startup_system(spawn_rackets)
         .add_startup_system(spawn_ball)
-        .add_system(control_rackets)
+        .add_system(control_rackets.before(bounce_ball))
         .add_system(serve_ball)
-        .add_system(bounce_ball)
+        .add_system(bounce_ball.before(move_ball))
         .add_system(move_ball)
         .add_system(score_goal)
         .run();
@@ -102,13 +102,14 @@ commands.spawn(SpriteBundle {
 }
 
 fn control_rackets(
+    time: Res<Time>,
     mut rackets: Query<(&Player, &mut Transform)>,
     keyboard: Res<Input<KeyCode>>,
 ) {
     if keyboard.pressed(KeyCode::W) {
         for (player, mut transform) in rackets.iter_mut() {
             if player.player_number == 1 && transform.translation.y < 0.5*WINDOW_HEIGHT-0.5*RACKET_HEIGHT {
-                transform.translation.y += RACKET_SPEED;
+                transform.translation.y += RACKET_SPEED*time.delta_seconds();
             }
         }
     }
@@ -116,7 +117,7 @@ fn control_rackets(
     if keyboard.pressed(KeyCode::S) {
         for (player, mut transform) in rackets.iter_mut() {
             if player.player_number == 1 && transform.translation.y > -0.5*WINDOW_HEIGHT+0.5*RACKET_HEIGHT {
-                transform.translation.y -= RACKET_SPEED;
+                transform.translation.y -= RACKET_SPEED*time.delta_seconds();
             }
         }
     }
@@ -124,7 +125,7 @@ fn control_rackets(
     if keyboard.pressed(KeyCode::Up) {
         for (player, mut transform) in rackets.iter_mut() {
             if player.player_number == 2 && transform.translation.y < 0.5*WINDOW_HEIGHT-0.5*RACKET_HEIGHT {
-                transform.translation.y += RACKET_SPEED;
+                transform.translation.y += RACKET_SPEED*time.delta_seconds();
             }
         }
     }
@@ -132,7 +133,7 @@ fn control_rackets(
     if keyboard.pressed(KeyCode::Down) {
         for (player, mut transform) in rackets.iter_mut() {
             if player.player_number == 2 && transform.translation.y > -0.5*WINDOW_HEIGHT+0.5*RACKET_HEIGHT {
-                transform.translation.y -= RACKET_SPEED;
+                transform.translation.y -= RACKET_SPEED*time.delta_seconds();
             }
         }
     }
@@ -153,7 +154,7 @@ fn spawn_ball(
     })
     .insert(Name::new("Ball"))
     .insert(Ball {
-        direction: 0.5*std::f32::consts::PI,
+        direction: 0.5*PI,
         moving: false,
     });
 }
@@ -176,28 +177,30 @@ fn bounce_ball(
     for (mut ball, ball_transform) in balls.iter_mut() {
         // Wall reflect
         if ball_transform.translation.y.abs() >= 0.5*WINDOW_HEIGHT {
-            ball.direction = std::f32::consts::PI - ball.direction;
+            ball.direction = PI - ball.direction;
         }
         
         // Racket reflect
         for (player, racket_transform) in rackets.iter() {
             if player.player_number == 1
-               && ball_transform.translation.x <= racket_transform.translation.x + BALL_SPEED
-               && ball_transform.translation.x >= racket_transform.translation.x
+               && modulus_f32(ball.direction, 2.0*PI) >= PI
+               && ball_transform.translation.x <= racket_transform.translation.x + 0.5*RACKET_WIDTH + 0.5*BALL_SIZE
+               && ball_transform.translation.x >= racket_transform.translation.x - 0.5*RACKET_WIDTH - 0.5*BALL_SIZE
                && ball_transform.translation.y >= racket_transform.translation.y - 0.5*RACKET_HEIGHT - 0.5*BALL_SIZE
                && ball_transform.translation.y <= racket_transform.translation.y + 0.5*RACKET_HEIGHT + 0.5*BALL_SIZE
             {
-                let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * std::f32::consts::PI;
-                ball.direction = 2.0*std::f32::consts::PI - ball.direction + scatter;
+                let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * PI;
+                ball.direction = 2.0*PI - ball.direction + scatter;
             }
             if player.player_number == 2
-               && ball_transform.translation.x >= racket_transform.translation.x - BALL_SPEED
-               && ball_transform.translation.x <= racket_transform.translation.x
+               && modulus_f32(ball.direction, 2.0*PI) <= PI
+               && ball_transform.translation.x >= racket_transform.translation.x - 0.5*RACKET_WIDTH - 0.5*BALL_SIZE
+               && ball_transform.translation.x <= racket_transform.translation.x + 0.5*RACKET_WIDTH + 0.5*BALL_SIZE
                && ball_transform.translation.y >= racket_transform.translation.y - 0.5*RACKET_HEIGHT - 0.5*BALL_SIZE
                && ball_transform.translation.y <= racket_transform.translation.y + 0.5*RACKET_HEIGHT + 0.5*BALL_SIZE
             {
-                let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * std::f32::consts::PI;
-                ball.direction = 2.0*std::f32::consts::PI - ball.direction + scatter;
+                let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * PI;
+                ball.direction = 2.0*PI - ball.direction + scatter;
             }
         }
 
@@ -205,12 +208,13 @@ fn bounce_ball(
 }
 
 fn move_ball(
+    time: Res<Time>,
     mut balls: Query<(&Ball, &mut Transform)>
 ) {
     for (ball, mut ball_transform) in balls.iter_mut() {
         if ball.moving {
-            ball_transform.translation.x += (ball.direction.sin())*BALL_SPEED;
-            ball_transform.translation.y += (ball.direction.cos())*BALL_SPEED;
+            ball_transform.translation.x += (ball.direction.sin())*BALL_SPEED*time.delta_seconds();
+            ball_transform.translation.y += (ball.direction.cos())*BALL_SPEED*time.delta_seconds();
         }
     }
 }
@@ -221,7 +225,7 @@ fn score_goal(
     for (mut ball, mut ball_transform) in balls.iter_mut() {
         if ball_transform.translation.x <= -0.5*WINDOW_WIDTH {
             // Return to center, player 2 serve
-            ball.direction = 0.5*std::f32::consts::PI;
+            ball.direction = 0.5*PI;
             ball.moving = false;
             ball_transform.translation.x = 0.0;
             ball_transform.translation.y = 0.0;
@@ -231,7 +235,7 @@ fn score_goal(
         
         if ball_transform.translation.x >= 0.5*WINDOW_WIDTH {
             // Return to center, player 1 serve
-            ball.direction = -0.5*std::f32::consts::PI;
+            ball.direction = -0.5*PI;
             ball.moving = false;
             ball_transform.translation.x = 0.0;
             ball_transform.translation.y = 0.0;
@@ -239,4 +243,10 @@ fn score_goal(
             //TODO: Add scoring logic
         }
     }
+}
+
+
+
+fn modulus_f32(a: f32, b: f32) -> f32 {
+    ((a % b) + b) % b
 }
