@@ -67,10 +67,12 @@ fn main() {
     .add_startup_system(spawn_camera)
     .add_startup_system(spawn_rackets)
     .add_startup_system(spawn_ball)
-    .add_system(control_rackets.before(bounce_ball))
     .add_system(serve_ball)
-    .add_system(bounce_ball.before(move_ball))
-    .add_system(move_ball)
+    .add_systems((
+        control_rackets,
+        bounce_ball,
+        move_ball
+    ).chain())
     .add_system(score_goal)
     .run();
 }
