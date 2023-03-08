@@ -1,7 +1,7 @@
 // std namespace uses
 use std::f32::consts::PI;
 
-// bevy name space uses
+// bevy namespace uses
 use bevy::{prelude::*, window::WindowResolution};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
