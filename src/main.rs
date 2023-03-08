@@ -189,7 +189,7 @@ fn bounce_ball(
                && ball_transform.translation.y <= racket_transform.translation.y + 0.5*RACKET_HEIGHT + 0.5*BALL_SIZE
             {
                 let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * PI;
-                ball.direction = 2.0*PI - ball.direction + scatter;
+                ball.direction = 2.0*PI - ball.direction - scatter;
             }
             if player.player_number == 2
                && modulus_f32(ball.direction, 2.0*PI) <= PI
