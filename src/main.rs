@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowResolution};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use std::f32::consts::PI;
 
@@ -38,13 +38,12 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
         .add_plugins(DefaultPlugins.set(
             WindowPlugin { 
-                window: WindowDescriptor{
-                    width: WINDOW_WIDTH,
-                    height: WINDOW_HEIGHT,
+                primary_window: Some(Window {
                     title: "Bevy Pong Implementation".to_string(),
+                    resolution: WindowResolution::new(WINDOW_WIDTH, WINDOW_HEIGHT),
                     resizable: false,
-                    ..Default::default()
-                },
+                    ..default()
+                }),
                 ..default()
             }
         ))
