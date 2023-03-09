@@ -22,6 +22,7 @@ pub const BALL_SPEED: f32 = 500.0;
 
 // Other constants
 pub const SCATTER_FACTOR: f32 = 0.3;
+pub const TEXT_SIZE: f32 = 32.0;
 
 ////////////////////////////////////////////////////////////////
 // Components
@@ -41,6 +42,12 @@ pub struct Ball {
 #[reflect(Component)]
 pub struct Player {
     player_number: u8,
+}
+
+#[derive(Reflect, Component, Default)]
+#[reflect(Component)]
+pub struct Scoreboard {
+    player_scores: [u8; 2],
 }
 
 ////////////////////////////////////////////////////////////////
@@ -67,6 +74,7 @@ fn main() {
     .add_startup_system(spawn_camera)
     .add_startup_system(spawn_rackets)
     .add_startup_system(spawn_ball)
+    .add_startup_system(spawn_scoreboard)
     .add_system(serve_ball)
     .add_systems((
         control_rackets,
@@ -237,9 +245,11 @@ fn move_ball(
 }
 
 fn score_goal(
-    mut balls: Query<(&mut Ball, &mut Transform)>
+    mut balls: Query<(&mut Ball, &mut Transform)>,
+    mut scoreboards: Query<(&mut Scoreboard, &mut Text)>
 ) {
     let (mut ball, mut ball_transform) = balls.single_mut();  // There should only be one ball
+    let (mut scoreboard, mut scoreboard_text) = scoreboards.single_mut();  // There should only be one scoreboard
     
     // If ball hits left side of screen
     if ball_transform.translation.x <= -0.5*WINDOW_WIDTH {
@@ -249,7 +259,10 @@ fn score_goal(
         ball_transform.translation.x = 0.0;
         ball_transform.translation.y = 0.0;
         
-        //TODO: Add scoring logic
+        scoreboard.player_scores[1] += 1;
+
+        scoreboard_text.sections[0].value = scoreboard.player_scores[0].to_string();
+        scoreboard_text.sections[2].value = scoreboard.player_scores[1].to_string();
     }
     
     // If ball hits right side of screen
@@ -259,11 +272,45 @@ fn score_goal(
         ball.moving = false;
         ball_transform.translation.x = 0.0;
         ball_transform.translation.y = 0.0;
+        
+        scoreboard.player_scores[0] += 1;
 
-        //TODO: Add scoring logic
+        scoreboard_text.sections[0].value = scoreboard.player_scores[0].to_string();
+        scoreboard_text.sections[2].value = scoreboard.player_scores[1].to_string();
     }
 }
 
+
+// Scoreboard systems
+fn spawn_scoreboard(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    
+    let text_style = TextStyle {
+        font: asset_server.load("fonts/consolas.ttf"),
+        font_size: TEXT_SIZE,
+        color: Color::WHITE,
+    };
+    
+    commands.spawn(Text2dBundle {
+        text: Text {
+            sections: vec![
+                TextSection::new("0", text_style.clone()),
+                TextSection::new(" : ", text_style.clone()),
+                TextSection::new("0", text_style.clone()),
+            ],
+            ..default()
+        },
+        transform: Transform::from_xyz(0.0, 0.5*WINDOW_HEIGHT-0.75*TEXT_SIZE, 0.0),
+        ..default()
+    })
+    .insert(Scoreboard {
+        player_scores: [0,0]
+    });
+
+    
+}
 
 ////////////////////////////////////////////////////////////////
 // Helper functions
