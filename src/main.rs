@@ -210,22 +210,17 @@ fn bounce_ball(
     
     // Racket reflect
     for (player, racket_transform) in rackets.iter() {
-        if player.player_number == 1                                                                              // If player 1
-            && modulus_f32(ball.direction, 2.0*PI) >= PI                                                      // and ball is moving left
-            && ball_transform.translation.x <= racket_transform.translation.x + 0.5*RACKET_WIDTH + 0.5*BALL_SIZE   // and ball is colliding with racket
-            && ball_transform.translation.x >= racket_transform.translation.x - 0.5*RACKET_WIDTH - 0.5*BALL_SIZE   
-            && ball_transform.translation.y >= racket_transform.translation.y - 0.5*RACKET_HEIGHT - 0.5*BALL_SIZE
-            && ball_transform.translation.y <= racket_transform.translation.y + 0.5*RACKET_HEIGHT + 0.5*BALL_SIZE
+        if player.player_number == 1                            // If player 1
+           && modulus_f32(ball.direction, 2.0*PI) >= PI         // and ball is moving left
+           && are_colliding(ball_transform, racket_transform)   // and ball is colliding with racket
         {
             let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * PI;  // Calculate scatter angle
             ball.direction = 2.0*PI - ball.direction - scatter;  // redirect ball
         }
-        if player.player_number == 2                                                                              // If player 2
-            && modulus_f32(ball.direction, 2.0*PI) <= PI                                                      // and ball is moving right
-            && ball_transform.translation.x >= racket_transform.translation.x - 0.5*RACKET_WIDTH - 0.5*BALL_SIZE   // and ball is colliding with racket
-            && ball_transform.translation.x <= racket_transform.translation.x + 0.5*RACKET_WIDTH + 0.5*BALL_SIZE
-            && ball_transform.translation.y >= racket_transform.translation.y - 0.5*RACKET_HEIGHT - 0.5*BALL_SIZE
-            && ball_transform.translation.y <= racket_transform.translation.y + 0.5*RACKET_HEIGHT + 0.5*BALL_SIZE
+
+        if player.player_number == 2                           // If player 2
+           && modulus_f32(ball.direction, 2.0*PI) <= PI        // and ball is moving right
+           && are_colliding(ball_transform, racket_transform)  // and ball is colliding with racket
         {
             let scatter: f32 = SCATTER_FACTOR * (ball_transform.translation.y - racket_transform.translation.y)/RACKET_HEIGHT * PI;  // Calculate scatter angle
             ball.direction = 2.0*PI - ball.direction + scatter;  // redirect ball
@@ -318,4 +313,11 @@ fn spawn_scoreboard(
 
 fn modulus_f32(a: f32, b: f32) -> f32 {
     ((a % b) + b) % b
+}
+
+fn are_colliding(ball_transform: &Transform, racket_transform: &Transform) -> bool {
+       ball_transform.translation.x >= racket_transform.translation.x - 0.5*RACKET_WIDTH - 0.5*BALL_SIZE
+    && ball_transform.translation.x <= racket_transform.translation.x + 0.5*RACKET_WIDTH + 0.5*BALL_SIZE
+    && ball_transform.translation.y >= racket_transform.translation.y - 0.5*RACKET_HEIGHT - 0.5*BALL_SIZE
+    && ball_transform.translation.y <= racket_transform.translation.y + 0.5*RACKET_HEIGHT + 0.5*BALL_SIZE
 }
