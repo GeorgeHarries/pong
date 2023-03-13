@@ -2,7 +2,7 @@
 use std::f32::consts::PI;
 
 // bevy namespace uses
-use bevy::{prelude::*, window::WindowResolution};
+use bevy::prelude::*;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 // Window constants
@@ -60,7 +60,7 @@ fn main() {
         WindowPlugin { 
             primary_window: Some(Window {
                 title: "Bevy Pong Implementation".to_string(),
-                resolution: WindowResolution::new(WINDOW_WIDTH, WINDOW_HEIGHT),
+                resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
                 resizable: false,
                 ..default()
             }),
